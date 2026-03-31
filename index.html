@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Attendance System</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+    input, select, button { padding: 8px; margin: 5px; }
+    table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+    td, th { border: 1px solid #ccc; padding: 8px; text-align: center; }
+  </style>
+</head>
+
+<body>
+
+<h2>📊 Student Attendance System</h2>
+
+<form id="attendanceForm">
+  <input id="studentName" placeholder="Student Name" required>
+  <input id="studentId" placeholder="Student ID" required>
+  
+  <select id="course">
+    <option value="">Select Course</option>
+    <option>IT</option>
+    <option>CS</option>
+  </select>
+
+  <input id="totalClasses" type="number" placeholder="Total Classes">
+  <input id="classesAttended" type="number" placeholder="Attended">
+
+  <input id="attendanceDate" type="date">
+  <input id="remarks" placeholder="Remarks">
+
+  <br>
+
+  <label><input type="radio" name="status" value="Present" checked> Present</label>
+  <label><input type="radio" name="status" value="Absent"> Absent</label>
+  <label><input type="radio" name="status" value="Late"> Late</label>
+
+  <br><br>
+
+  <button type="submit">Save</button>
+  <button type="button" id="resetBtn">Reset</button>
+</form>
+
+<h3>📈 Percentage</h3>
+<div id="meterValue"></div>
+<div id="meterFill"></div>
+<div id="meterStatus"></div>
+
+<h3>🔍 Search</h3>
+<input id="searchInput" placeholder="Search...">
+
+<h3>📋 Records</h3>
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Name</th>
+      <th>ID</th>
+      <th>Course</th>
+      <th>Attendance</th>
+      <th>%</th>
+      <th>Status</th>
+      <th>Date</th>
+      <th>Delete</th>
+    </tr>
+  </thead>
+  <tbody id="recordsTbody"></tbody>
+</table>
+
+<button id="exportBtn">Export CSV</button>
+
+<h3>⏰ Time</h3>
+<div id="liveClock"></div>
+
+<div id="toastWrap">
+  <div id="toastMsg"></div>
+</div>
+
+<script>
+/* ==== YOUR JS CODE (WORKING VERSION) ==== */
+
+// FIX: Ensure DOM loads first
+document.addEventListener("DOMContentLoaded", function() {
+
+let records = JSON.parse(localStorage.getItem('att_records') || '[]');
+let editingId = null;
+let searchQuery = '';
+
+const form = document.getElementById('attendanceForm');
+const nameEl = document.getElementById('studentName');
+const idEl = document.getElementById('studentId');
+const courseEl = document.getElementById('course');
+const totalEl = document.getElementById('totalClasses');
+const attendedEl = document.getElementById('classesAttended');
+const dateEl = document.getElementById('attendanceDate');
+const remarksEl = document.getElementById('remarks');
+const meterValue = document.getElementById('meterValue');
+const meterFill = document.getElementById('meterFill');
+const meterStatus = document.getElementById('meterStatus');
+const tbody = document.getElementById('recordsTbody');
+const searchInput = document.getElementById('searchInput');
+const exportBtn = document.getElementById('exportBtn');
+const resetBtn = document.getElementById('resetBtn');
+
+// INIT
+dateEl.value = new Date().toISOString().split('T')[0];
+
+setInterval(() => {
+  const now = new Date();
+  document.getElementById('liveClock').textContent = now.toLocaleTimeString();
+}, 1000);
+
+totalEl.addEventListener('input', calc);
+attendedEl.addEventListener('input', calc);
+
+function calc() {
+  let total = totalEl.value;
+  let att = attendedEl.value;
+  if(total > 0){
+    let pct = ((att/total)*100).toFixed(1);
+    meterValue.textContent = pct + "%";
+  }
+}
+
+form.addEventListener('submit', function(e){
+  e.preventDefault();
+
+  let total = totalEl.value;
+  let att = attendedEl.value;
+  let pct = ((att/total)*100).toFixed(1);
+
+  let status = document.querySelector('input[name="status"]:checked').value;
+
+  let record = {
+    id: Date.now(),
+    name: nameEl.value,
+    studentId: idEl.value,
+    course: courseEl.value,
+    total,
+    attended: att,
+    pct,
+    status,
+    date: dateEl.value
+  };
+
+  records.unshift(record);
+  localStorage.setItem('att_records', JSON.stringify(records));
+  render();
+});
+
+function render(){
+  tbody.innerHTML = records.map((r,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td>${r.name}</td>
+      <td>${r.studentId}</td>
+      <td>${r.course}</td>
+      <td>${r.attended}/${r.total}</td>
+      <td>${r.pct}%</td>
+      <td>${r.status}</td>
+      <td>${r.date}</td>
+      <td><button onclick="del(${r.id})">X</button></td>
+    </tr>
+  `).join('');
+}
+
+window.del = function(id){
+  records = records.filter(r=>r.id!==id);
+  localStorage.setItem('att_records', JSON.stringify(records));
+  render();
+}
+
+render();
+
+});
+
+</script>
+
+</body>
+</html>
